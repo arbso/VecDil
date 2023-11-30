@@ -64,7 +64,7 @@ namespace VecDil.Controllers
                 else
                 {
                     // if username/password are not valid, send unauthorized status code in response               
-                    return BadRequest("Username or Password Invalid!");
+                    return BadRequest("Email or password does not match!");
                 }
             }
             catch (Exception ex)
@@ -100,7 +100,7 @@ namespace VecDil.Controllers
         {
             if (!Regex.IsMatch(email, @"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$"))
             {
-                throw new ArgumentException("Invalid email format");
+                throw new ArgumentException("Invalid email format!");
             }
         }
 
