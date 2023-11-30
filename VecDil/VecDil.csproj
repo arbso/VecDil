@@ -14,4 +14,12 @@
     <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="6.5.0" />
     <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="6.5.0" />
   </ItemGroup>
+  <ItemGroup>
+    <None Remove="Models\Login\" />
+    <None Remove="Models\User\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Models\Login\" />
+    <Folder Include="Models\User\" />
+  </ItemGroup>
 </Project>
