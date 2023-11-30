@@ -6,7 +6,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Cryptography;
 using System.Net;
 using System.Security.Claims;
-using VecDil.Models;
+using VecDil.Models.Login;
 using System.Text.RegularExpressions;
 
 namespace VecDil.Controllers
