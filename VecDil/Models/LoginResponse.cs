@@ -6,12 +6,7 @@ namespace VecDil.Models
         public LoginResponse()
         {
             this.Token = String.Empty;
-            this.responseMsg =
-            new HttpResponseMessage()
-            {
-                StatusCode =
-               System.Net.HttpStatusCode.Unauthorized
-            };
+            this.responseMsg = new HttpResponseMessage() { StatusCode = System.Net.HttpStatusCode.Unauthorized };
         }
 
         public string Token { get; set; }
