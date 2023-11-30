@@ -1,5 +1,5 @@
 ﻿using System;
-namespace VecDil.Models
+namespace VecDil.Models.Login
 {
     public class LoginRequest
     {
