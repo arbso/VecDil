@@ -5,7 +5,7 @@ namespace VecDil.Models.Login
     {
         public LoginResponse()
         {
-            this.Token = String.Empty;
+            this.Token = String.Empty;//ac
             this.responseMsg =
             new HttpResponseMessage()
             {
