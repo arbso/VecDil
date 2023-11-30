@@ -5,7 +5,7 @@ namespace VecDil.Models
     {
         public LoginResponse()
         {
-            // ac
+            // ac ac2
             this.Token = String.Empty;
             this.responseMsg =
             new HttpResponseMessage()
@@ -14,7 +14,7 @@ namespace VecDil.Models
                System.Net.HttpStatusCode.Unauthorized
             };
         }
-
+        //ac3
         public string Token { get; set; }
         public HttpResponseMessage responseMsg
         {
