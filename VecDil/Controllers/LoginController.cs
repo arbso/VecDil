@@ -6,7 +6,8 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Cryptography;
 using System.Net;
 using System.Security.Claims;
-using VecDil.Models;
+using VecDil.Models.Login;
+using System.Text.RegularExpressions;
 
 namespace VecDil.Controllers
 
@@ -27,53 +28,63 @@ namespace VecDil.Controllers
         public ActionResult<object> Authenticate([FromBody] LoginRequest login)
         {
             var loginResponse = new LoginResponse { };
-            LoginRequest loginrequest = new()
-            {
-                UserName = login.UserName.ToLower(),
-                Password = login.Password,
-                Email = login.Email
-            };
 
-            bool isUsernamePasswordValid = false;
-
-            if (login != null)
+            try
             {
-                // make await call to the Database to check username and password. here we only checking if password value is admin
-                isUsernamePasswordValid = loginrequest.Password == "admin" ? true : false;
-            }
-            // if credentials are valid
-            if (isUsernamePasswordValid)
-            {
-                string token = CreateToken(loginrequest.UserName, loginrequest.Email);
+                ValidateEmail(login.Email);
 
-                loginResponse.Token = token;
-                loginResponse.responseMsg = new HttpResponseMessage()
+                LoginRequest loginrequest = new()
                 {
-                    StatusCode = HttpStatusCode.OK
+                    Email = login.Email.ToLower(),
+                    Password = login.Password,
                 };
 
-                //return the token
-                return Ok(new { loginResponse });
+                bool isUsernamePasswordValid = false;
+
+                if (login != null)
+                {
+                    // make await call to the Database to check username and password. here we only check if the password value is "admin"
+                    isUsernamePasswordValid = loginrequest.Password == "admin";
+                }
+
+                // if credentials are valid
+                if (isUsernamePasswordValid)
+                {
+                    string token = CreateToken(loginrequest.Email);
+
+                    loginResponse.Token = token;
+                    loginResponse.responseMsg = new HttpResponseMessage()
+                    {
+                        StatusCode = HttpStatusCode.OK
+                    };
+
+                    // return the token
+                    return Ok(new { loginResponse });
+                }
+                else
+                {
+                    // if username/password are not valid, send unauthorized status code in response               
+                    return BadRequest("Email or password does not match!");
+                }
             }
-            else
+            catch (Exception ex)
             {
-                // if username/password are not valid send unauthorized status code in response               
-                return BadRequest("Username or Password Invalid!");
+                // Handle the exception for invalid email format
+                return BadRequest(ex.Message);
             }
         }
 
-        private string CreateToken(string username, string email)
+        private string CreateToken(string email)
         {
 
             List<Claim> claims = new()
             {                    
                 //list of Claims - we only checking username - more claims can be added.
-                new Claim("username", Convert.ToString(username)),
                 new Claim("email", Convert.ToString(email)),
             };
 
             var key = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(_configuration.GetSection("AppSettings:Token").Value));
-            var cred = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
+            var cred = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
             var token = new JwtSecurityToken(
                 claims: claims,
                 expires: DateTime.Now.AddHours(2),
@@ -84,6 +95,15 @@ namespace VecDil.Controllers
 
             return jwt;
         }
+
+        private void ValidateEmail(string email)
+        {
+            if (!Regex.IsMatch(email, @"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$"))
+            {
+                throw new ArgumentException("Invalid email format!");
+            }
+        }
+
     }
 }
 
