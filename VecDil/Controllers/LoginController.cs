@@ -8,6 +8,10 @@ using System.Net;
 using System.Security.Claims;
 using VecDil.Models.Login;
 using System.Text.RegularExpressions;
+using VecDil.Models.User;
+using System.Linq;
+using Microsoft.Extensions.Configuration;
+using Microsoft.EntityFrameworkCore;
 
 namespace VecDil.Controllers
 
@@ -17,6 +21,7 @@ namespace VecDil.Controllers
     [ApiController]
     public class LoginController : ControllerBase
     {
+        public AuthHelper authHelper = new();
         private readonly IConfiguration _configuration;
 
         public LoginController(IConfiguration configuration)
@@ -24,14 +29,14 @@ namespace VecDil.Controllers
             _configuration = configuration;
         }
 
-        [HttpPost("login")]
+        [HttpPost("Login")]
         public ActionResult<object> Authenticate([FromBody] LoginRequest login)
         {
             var loginResponse = new LoginResponse { };
 
             try
             {
-                ValidateEmail(login.Email);
+                authHelper.ValidateEmail(login.Email);
 
                 LoginRequest loginrequest = new()
                 {
@@ -39,32 +44,34 @@ namespace VecDil.Controllers
                     Password = login.Password,
                 };
 
-                bool isUsernamePasswordValid = false;
+                var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
+                optionsBuilder.UseSqlServer(_configuration.GetConnectionString("DefaultConnection"));
 
-                if (login != null)
+                using (var dbContext = new ApplicationDbContext(optionsBuilder.Options))
                 {
-                    // make await call to the Database to check username and password. here we only check if the password value is "admin"
-                    isUsernamePasswordValid = loginrequest.Password == "admin";
-                }
+                    // Check if the user with the provided email exists in the database
+                    var user = dbContext.Users.SingleOrDefault(u => u.Email == loginrequest.Email);
 
-                // if credentials are valid
-                if (isUsernamePasswordValid)
-                {
-                    string token = CreateToken(loginrequest.Email);
-
-                    loginResponse.Token = token;
-                    loginResponse.responseMsg = new HttpResponseMessage()
+                    if (user != null && authHelper.VerifyPassword(loginrequest.Password, user.Password))
                     {
-                        StatusCode = HttpStatusCode.OK
-                    };
+                        // Credentials are valid
+                        string token = CreateToken(loginrequest.Email);
 
-                    // return the token
-                    return Ok(new { loginResponse });
-                }
-                else
-                {
-                    // if username/password are not valid, send unauthorized status code in response               
-                    return BadRequest("Email or password does not match!");
+                        loginResponse.Token = token;
+                        loginResponse.responseMsg = new HttpResponseMessage()
+                        {
+                            StatusCode = HttpStatusCode.OK
+                        };
+
+                        // Return the token
+                        return Ok(new { loginResponse });
+                    }
+
+                    else
+                    {
+                        // if username/password are not valid, send unauthorized status code in response               
+                        return BadRequest("Email or password does not match!");
+                    }
                 }
             }
             catch (Exception ex)
@@ -73,6 +80,7 @@ namespace VecDil.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
 
         private string CreateToken(string email)
         {
@@ -95,15 +103,6 @@ namespace VecDil.Controllers
 
             return jwt;
         }
-
-        private void ValidateEmail(string email)
-        {
-            if (!Regex.IsMatch(email, @"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$"))
-            {
-                throw new ArgumentException("Invalid email format!");
-            }
-        }
-
     }
 }
 
